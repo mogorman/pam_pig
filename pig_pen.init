@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# chkconfig: 35 90 12
+# description: Foo server
+#
+
+# Get function from functions library
+#. /etc/init.d/functions
+
+# Start the service pig_pen
+start() {
+        echo -n "Starting pig_pen server:"
+        /usr/local/bin/pig_pen &
+        ### Create the lock file ###
+        touch /var/lock/subsys/pig_pen
+}
+
+# Restart the service pig_pen
+stop() {
+#        initlog -c "echo -n Stopping pig_pen server: "
+        killall -9 pig_pen
+        ### Now, delete the lock file ###
+        rm -f /var/lock/subsys/pig_pen
+        echo -n "Stopping pig_pen server:"
+}
+
+### main logic ###
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status pig_pen
+        ;;
+  restart|reload|condrestart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
