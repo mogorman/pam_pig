@@ -4,8 +4,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <curl/curl.h>
-#include <security/pam_modules.h>
+
+#ifdef MACOSX
+#include <pam/pam_appl.h>
+#include <pam/pam_misc.h>
+#else
 #include <security/pam_appl.h>
+#include <security/pam_misc.h>
+#endif
 
 #ifndef PAM_EXTERN
 #define PAM_EXTERN
@@ -17,7 +23,7 @@
 #define PORT_NUMBER  LDAP_PORT
 #endif
 
-#define D printf
+#define DEBUG printf
 
 static char password_prompt[] = "Oink:";
 
@@ -44,7 +50,7 @@ static char * authorize_user_token_ldap (const char *ldapserver,
 			   const char *user)
 {
 
-  D(("called"));
+  DEBUG(("called"));
   int retval = 0;
 #ifdef HAVE_LIBLDAP
   LDAP *ld;
@@ -76,8 +82,8 @@ static char * authorize_user_token_ldap (const char *ldapserver,
   strcat (sr, yubi_attr);
   strcat (sr, sren);
 
-  D(("find: %s",find));
-  D(("sr: %s",sr));
+  DEBUG(("find: %s",find));
+  DEBUG(("sr: %s",sr));
 
   /* Get a handle to an LDAP connection. */
   if (ldap_uri)
@@ -85,7 +91,7 @@ static char * authorize_user_token_ldap (const char *ldapserver,
       rc = ldap_initialize (&ld,ldap_uri);
       if (rc != LDAP_SUCCESS)
 	{
-	  D (("ldap_init: %s", ldap_err2string (rc)));
+	  DEBUG (("ldap_init: %s", ldap_err2string (rc)));
 	  return NULL;
 	}
     }
@@ -93,7 +99,7 @@ static char * authorize_user_token_ldap (const char *ldapserver,
     {
       if ((ld = ldap_init (ldapserver, PORT_NUMBER)) == NULL)
 	{
-	  D (("ldap_init"));
+	  DEBUG (("ldap_init"));
 	  return NULL;
 	}
     }
@@ -102,19 +108,19 @@ static char * authorize_user_token_ldap (const char *ldapserver,
   rc = ldap_simple_bind_s (ld, NULL, NULL);
   if (rc != LDAP_SUCCESS)
     {
-      D (("ldap_simple_bind_s: %s", ldap_err2string (rc)));
+      DEBUG (("ldap_simple_bind_s: %s", ldap_err2string (rc)));
       return NULL;
     }
 
   /* Search for the entry. */
-  D (("ldap-dn: %s", find));
-  D (("ldap-filter: %s", sr));
+  DEBUG (("ldap-dn: %s", find));
+  DEBUG (("ldap-filter: %s", sr));
 
   if ((rc = ldap_search_ext_s (ld, find, LDAP_SCOPE_BASE,
 			       sr, NULL, 0, NULL, NULL, LDAP_NO_LIMIT,
 			       LDAP_NO_LIMIT, &result)) != LDAP_SUCCESS)
     {
-      D (("ldap_search_ext_s: %s", ldap_err2string (rc)));
+      DEBUG (("ldap_search_ext_s: %s", ldap_err2string (rc)));
 
       return NULL;
     }
@@ -152,8 +158,8 @@ static char * authorize_user_token_ldap (const char *ldapserver,
   free(sr);
 
 #else
-  D (("Trying to use LDAP, but this function is not compiled in pam_yubico!!"));
-  D (("Install libldap-dev and then recompile pam_yubico."));
+  DEBUG (("Trying to use LDAP, but this function is not compiled in pam_yubico!!"));
+  DEBUG (("Install libldap-dev and then recompile pam_yubico."));
 #endif
   return NULL;
 }
