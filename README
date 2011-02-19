@@ -27,7 +27,6 @@ auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth
 
 
 == TODO ==
-* Fix ids so they aren't needed and can be variable length
 * Allow for pin to be appended and pass sent down, or password then pin
 * Think about sandwich
 * QR console output
@@ -39,4 +38,3 @@ auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth
 * Logging
 * Verify permissions
 * Fail correctly on invalid passwords
-* Not require server

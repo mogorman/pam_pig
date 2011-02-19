@@ -1,9 +1,22 @@
-#include <sys/param.h>
-#include <stdlib.h>
+
+
+
+#include <fcntl.h>
+#include <pwd.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/fsuid.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <syslog.h>
+#include <time.h>
 #include <unistd.h>
+
+#include <sys/param.h>
 #include <curl/curl.h>
+
 
 #ifdef MACOSX
 #include <pam/pam_appl.h>
@@ -21,10 +34,32 @@
 #define PORT_NUMBER  LDAP_PORT
 #endif
 
+#include "pig.h"
+
 #define DEBUG printf
 
-static char password_prompt[] = "Oink:";
+static char password_prompt[] = "Oink!:";
 
+#define MODULE_NAME "pam_pig"
+
+static void log_message(int priority, pam_handle_t *pamh, const char *format, ...) {
+        char *service = NULL;
+        if (pamh)
+                pam_get_item(pamh, PAM_SERVICE, (void *)&service);
+        if (!service)
+                service = "";
+
+        char logname[80];
+        snprintf(logname, sizeof(logname), "%s(" MODULE_NAME ")", service);
+
+        va_list args;
+        va_start(args, format);
+        openlog(logname, LOG_CONS | LOG_PID, LOG_AUTHPRIV);
+        vsyslog(priority, format, args);
+        va_end(args);
+
+        closelog();
+}
 
 /*
  * This function will look in ldap id the token correspond to the
@@ -169,12 +204,21 @@ size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp)
         return size;
 }
 
-int check_key(const char *id, const char *url, const char *hash)
+int local_authenticate(const char *id, const char *hash, const char *folder, int skew) {
+        if(!verify_key(id, hash, folder, skew))
+                return PAM_SUCCESS;
+        return PAM_AUTH_ERR;
+}
+
+int check_key(const char *id, const char *url, const char *hash, const char *folder, int skew, pam_handle_t *pamh)
 {
         char domain [DOMAIN_LENGTH] = {0};
         CURL *curl;
         CURLcode res;
 
+        if(url == "") {
+                return local_authenticate(id,hash, folder, skew);
+        }
         curl = curl_easy_init();
         if(strlen(hash) != 6) {
                 return PAM_AUTH_ERR; //It should be impossible to get here
@@ -246,13 +290,15 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	int pam_err, retry;
 	int system_is_down = 0;
         int stacked_pass = 0;
-        char id [20] = {0};
+        int skew = 3;
+        char id [DOMAIN_LENGTH] = {0};
         char id_path [DOMAIN_LENGTH] = {0};
         FILE *id_file;
         const char *url = getarg("url", argc, argv);
-        const char *id_folder = getarg("id_folder", argc, argv);
+        const char *folder = getarg("folder", argc, argv);
 	const char *system = getarg("system_is_down", argc, argv);
         const char *stacked = getarg("stacked_pass", argc, argv);
+        const char *skew_string = getarg("skew", argc, argv);
         const char *ldap_server = getarg("ldap_server", argc, argv);
 	const char *ldap_uri = getarg("ldap_uri", argc, argv);
         const char *ldap_dn = getarg("ldap_dn", argc, argv);
@@ -263,13 +309,16 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	if( system && (!strcmp("allow",system))) {
 		system_is_down = 1;
 	}
-	if( system && (!strcmp("yes",stacked))) {
+	if( stacked && (!strcmp("yes",stacked))) {
 		stacked_pass = 1;
 	}
+	if( skew_string) {
+		skew = atoi(skew_string);
+	}
         if(!url)
-                url = "http://localhost:4240/auth/";
-        if(!id_folder)
-                id_folder = "/etc/pig/ids/";
+                url = "";
+        if(!folder)
+                folder = "/etc/pig/";
 	/* identify user */
 	if ((pam_err = pam_get_user(pamh, &user, NULL)) != PAM_SUCCESS)
 		return (pam_err);
@@ -289,6 +338,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 		if (resp != NULL) {
 			if (pam_err == PAM_SUCCESS) {
 				password = resp->resp;
+
                                 if(strlen(password) < 6) {
                                         return (PAM_AUTH_ERR);
                                 } else {
@@ -313,16 +363,18 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	if (pam_err != PAM_SUCCESS)
 		return (PAM_AUTH_ERR);
         if(!ldap_server) {
-                strncat(id_path, id_folder, DOMAIN_LENGTH);
+                strncat(id_path, folder, DOMAIN_LENGTH);
+                strncat(id_path, "/ids/", DOMAIN_LENGTH);
                 strncat(id_path, user, DOMAIN_LENGTH);
                 if(!(id_file = fopen(id_path, "r"))) {
-                        return PAM_AUTH_ERR;
-                }
-                if(fread(id, 20,1, id_file) != 1) {
+                        strncat(id, user, DOMAIN_LENGTH);
+                } else if(fread(id, DOMAIN_LENGTH,1, id_file) != 1) {
                         fclose(id_file);
-                        return PAM_AUTH_ERR;
-                }
-                fclose(id_file);
+                        if(!id || id[0] == '\0') {
+                                return PAM_AUTH_ERR;
+                        }
+                } else
+                        fclose(id_file);
         } else {
 #ifdef HAVE_LIBLDAP
                 strncat(id,
@@ -335,11 +387,15 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
                 return PAM_AUTH_ERR;
 #endif
         }
-        pam_err = check_key(id, url, hash);
+        pam_err = check_key(id, url, hash, folder, skew, pamh);
         if (pam_err == PAM_AUTHINFO_UNAVAIL && system_is_down) {
                 pam_err = PAM_SUCCESS;
         }
-
+        if(pam_err == PAM_SUCCESS) {
+                log_message(LOG_ERR, pamh,"pig authenticated successfully.");
+        } else {
+                log_message(LOG_ERR, pamh,"pig did not authenticated successfully.");
+        }
 	return (pam_err);
 }
 

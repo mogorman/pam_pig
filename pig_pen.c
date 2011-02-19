@@ -18,84 +18,13 @@
 
 //#include <nettle/sha.h>
 //#include <nettle/hmac.h>
-#include "hmac_sha2.h"
+#include "pig.h"
 
 #include <ctype.h>
 
-#define FNV_PRIME_32 16777619
-#define FNV_BASIS_32 2166136261
-#define MASK_24 (((uint32_t)1<<24)-1)  /* i.e., (u_int32_t)0xffffff */
 
-#define DOMAIN_LENGTH 255
-const char *secret_folder = "/etc/pig/secrets/";
+const char *secret_folder = "/etc/pig/";
 
-uint32_t fnv_hasher(uint8_t *str)
-{
-        uint32_t hval = 0;
-        /*
-         * FNV-1 hash each octet in the buffer
-         */
-        int i = 0;
-        for (i = 0; i < 32; i++) {
-
-                /* multiply by the 32 bit FNV magic prime mod 2^32 */
-                hval *= FNV_PRIME_32;
-                /* xor the bottom with the current octet */
-                hval ^= (uint32_t)str[i];
-        }
-
-        /* return our new hash value */
-        return hval;
-}
-
-int verify_key(uint32_t epoch, unsigned char *secret, const char *hash) {
-        char final_fnv[7];
-        uint8_t digest[SHA256_DIGEST_SIZE];
-        uint8_t time_in_4_bytes[4] = {0};
-        uint32_t fnv_hash,fnv_hash2;
-        memset(digest, 0, sizeof(digest));
-        time_in_4_bytes[3] = (uint8_t)epoch;
-        time_in_4_bytes[2] = (uint8_t)(epoch >> 8);
-        time_in_4_bytes[1] = (uint8_t)(epoch >> 16);
-        time_in_4_bytes[0] = (uint8_t)(epoch >> 24);
-        hmac_sha256(secret, 256, time_in_4_bytes, 4, digest, SHA256_DIGEST_SIZE);
-        fnv_hash = fnv_hasher(digest);
-        fnv_hash2 = (fnv_hash>>24) ^ (fnv_hash & MASK_24);
-        snprintf(final_fnv, 7, "%06x", fnv_hash2);
-        if(strncmp(final_fnv,hash,6))
-                return 1;
-        return 0;
-}
-
-int please_verify_key(const char *key, const char *hash) {
-        uint8_t digest[SHA256_DIGEST_SIZE];
-        uint32_t epoch = (uint32_t) time(0);
-        char secret_path[DOMAIN_LENGTH] = {0};
-        unsigned char secret [256] = {0};
-        FILE *file_secret;
-        memset(digest, 0, sizeof(digest));
-        strncat(secret_path, secret_folder, DOMAIN_LENGTH);
-        strncat(secret_path, key, DOMAIN_LENGTH);
-        if(!(file_secret = fopen(secret_path, "r"))) {
-                return -1;
-        }
-        if(fread(secret, 256,1, file_secret) != 1) {
-                fclose(file_secret);
-                return -2;
-        }
-        fclose(file_secret);
-        epoch = epoch - (epoch %60);
-        if(verify_key(epoch, secret, hash)) {
-                epoch = epoch - 60;
-                if(verify_key(epoch, secret, hash)) {
-                        epoch = epoch + 120;
-                        if(verify_key(epoch, secret, hash)) {
-                                return 1;
-                        }
-                }
-        }
-        return 0;
-}
 
 static void *event_handler(enum mg_event event,
                            struct mg_connection *conn,
@@ -113,8 +42,8 @@ static void *event_handler(enum mg_event event,
                                 if(key && (key[0] != '\0')) {
                                         hash =strsep(&tmp, "/");
                                         if (hash && (hash[0] != '\0')) {
-                                                if((strlen(hash) == 6) && (strlen(key) == 20)) {
-                                                        if(!please_verify_key(key,hash)) {
+                                                if((strlen(hash) == 6) && (strlen(key) <= 255)) {
+                                                        if(!verify_key(key,hash, secret_folder, 3)) {
                                                                 res = "HTTP/1.1 200 OK\r\n";
                                                         }
                                                 }
