@@ -1,8 +1,20 @@
-== Debian ==
-cp pam_pig.so /lib/security
-cp pig_pen.init /etc/init.d
-cp pig_pen /usr/local/bin
-update-rc.d pig_pen.init defaults
+PAM PIG
+================================
+Blah blah
+
+Debian
+------
+
+Prerequisites
+
+	apt-get install build-essential git-core libcurl4-gnutls-dev libqrencode-dev libpng12-dev
+
+Installation
+
+	cp pam_pig.so /lib/security
+	cp pig_pen.init /etc/init.d
+	cp pig_pen /usr/local/bin
+	update-rc.d pig_pen.init defaults
 
 ## This is all the users secrets
 mkdir -p /etc/pig/secrets
