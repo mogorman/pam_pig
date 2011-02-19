@@ -30,7 +30,6 @@ auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth
 * QR console output
 * Make a deb
 * Clean up init file
-* Prompt configurable 
 * Set case insensitive
 * Sign results
 * Logging

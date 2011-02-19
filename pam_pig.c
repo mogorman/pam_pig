@@ -38,7 +38,6 @@
 
 #define DEBUG printf
 
-static char password_prompt[] = "Oink!:";
 
 #define MODULE_NAME "pam_pig"
 
@@ -306,7 +305,8 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
         const char *ldap_dn = getarg("ldap_dn", argc, argv);
         const char *ldap_user_attr = getarg("ldap_user_attr", argc, argv);
 	const char *ldap_pig_attr = getarg("ldap_pig_attr", argc, argv);
-        char *eat_me;
+        const char *password_prompt = getarg("prompt", argc, argv);
+        const char *eat_me;
         char hash [7] = {0};
         char cleaned_password[DOMAIN_LENGTH] = {0};
         char tmp_password[DOMAIN_LENGTH] = {0};
@@ -315,6 +315,9 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	}
 	if( stacked && (!strcmp("yes",stacked))) {
 		stacked_pass = 1;
+	}
+	if( !password_prompt || password_prompt[0] == '\0') {
+		password_prompt="Oink!:";
 	}
 	if( sandwich && (!strcmp("yes",sandwich))) {
 		im_a_sandwich = 1;
