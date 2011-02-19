@@ -31,10 +31,12 @@ auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth
 * Allow for pin to be appended and pass sent down, or password then pin
 * Think about sandwich
 * QR console output
-* make a deb
-* clean up init file
-* prompt configurable 
-* set case insensitive
-* sign results
-* logging
-* verify permissions
+* Make a deb
+* Clean up init file
+* Prompt configurable 
+* Set case insensitive
+* Sign results
+* Logging
+* Verify permissions
+* Fail correctly on invalid passwords
+* Not require server
