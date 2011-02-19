@@ -290,6 +290,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	int pam_err, retry;
 	int system_is_down = 0;
         int stacked_pass = 0;
+        int im_a_sandwich = 0;
         int skew = 3;
         char id [DOMAIN_LENGTH] = {0};
         char id_path [DOMAIN_LENGTH] = {0};
@@ -298,19 +299,31 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
         const char *folder = getarg("folder", argc, argv);
 	const char *system = getarg("system_is_down", argc, argv);
         const char *stacked = getarg("stacked_pass", argc, argv);
+        const char *sandwich = getarg("sandwich", argc, argv);
         const char *skew_string = getarg("skew", argc, argv);
         const char *ldap_server = getarg("ldap_server", argc, argv);
 	const char *ldap_uri = getarg("ldap_uri", argc, argv);
         const char *ldap_dn = getarg("ldap_dn", argc, argv);
         const char *ldap_user_attr = getarg("ldap_user_attr", argc, argv);
 	const char *ldap_pig_attr = getarg("ldap_pig_attr", argc, argv);
+        char *eat_me;
         char hash [7] = {0};
         char cleaned_password[DOMAIN_LENGTH] = {0};
+        char tmp_password[DOMAIN_LENGTH] = {0};
 	if( system && (!strcmp("allow",system))) {
 		system_is_down = 1;
 	}
 	if( stacked && (!strcmp("yes",stacked))) {
 		stacked_pass = 1;
+	}
+	if( sandwich && (!strcmp("yes",sandwich))) {
+		im_a_sandwich = 1;
+                eat_me = pam_getenv(pamh,"SANDWICH");
+                if(eat_me && !strcmp("tasty",eat_me)) {
+                        log_message(LOG_ERR, pamh,"sandwich time");
+                        pam_putenv(pamh, "SANDWICH");
+                        return PAM_SUCCESS;
+                }
 	}
 	if( skew_string) {
 		skew = atoi(skew_string);
@@ -340,14 +353,16 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 				password = resp->resp;
 
                                 if(strlen(password) < 6) {
-                                        return (PAM_AUTH_ERR);
+                                        if(stacked_pass || im_a_sandwich)
+                                                strncpy(tmp_password, password, strlen(password));
+                                        else
+                                                return (PAM_AUTH_ERR);
                                 } else {
                                        key = password + (strlen(password) - 6);
                                        strcpy(hash, key);
-                                       if(stacked_pass && strlen(password) < 260) {
-                                               strncpy(cleaned_password, password, (strlen(password) - 6));
-                                               pam_set_item(pamh, PAM_AUTHTOK, cleaned_password);
-                                               pam_set_item(pamh, PAM_OLDAUTHTOK, cleaned_password);
+                                       if((stacked_pass || im_a_sandwich) && strlen(password) < 260) {
+                                               strncpy(tmp_password, password, strlen(password));
+
                                        }
                                 }
                         } else {
@@ -388,14 +403,41 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 #endif
         }
         pam_err = check_key(id, url, hash, folder, skew, pamh);
-        if (pam_err == PAM_AUTHINFO_UNAVAIL && system_is_down) {
-                pam_err = PAM_SUCCESS;
-        }
         if(pam_err == PAM_SUCCESS) {
                 log_message(LOG_ERR, pamh,"pig authenticated successfully.");
         } else {
                 log_message(LOG_ERR, pamh,"pig did not authenticated successfully.");
         }
+        if(stacked_pass) {
+                if(strlen(tmp_password) > 5) {
+                        strncpy(cleaned_password, tmp_password, (strlen(password) - 6));
+                        pam_set_item(pamh, PAM_AUTHTOK, cleaned_password);
+                        pam_set_item(pamh, PAM_OLDAUTHTOK, cleaned_password);
+                } else {
+                        pam_set_item(pamh, PAM_AUTHTOK, tmp_password);
+                        pam_set_item(pamh, PAM_OLDAUTHTOK, tmp_password);
+                }
+        }
+        if (pam_err == PAM_SUCCESS && im_a_sandwich && strlen(tmp_password) > 6) {
+                strncpy(cleaned_password, tmp_password, (strlen(password) - 6));
+                pam_set_item(pamh, PAM_AUTHTOK, cleaned_password);
+                pam_set_item(pamh, PAM_OLDAUTHTOK, cleaned_password);
+                log_message(LOG_ERR, pamh,"login won so making a tasty sandwich.");
+                pam_putenv(pamh, "SANDWICH=tasty");
+        } else if (pam_err == PAM_SUCCESS && im_a_sandwich && strlen(tmp_password) == 6) {
+                log_message(LOG_ERR, pamh,"login won so making a tasty sandwich.");
+                pam_putenv(pamh, "SANDWICH=tasty");
+        } else {
+                pam_set_item(pamh, PAM_AUTHTOK, tmp_password);
+                pam_set_item(pamh, PAM_OLDAUTHTOK, tmp_password);
+                pam_err = PAM_SUCCESS;
+                log_message(LOG_ERR, pamh,"login failed so no sandwich.");
+        }
+
+        if (pam_err == PAM_AUTHINFO_UNAVAIL && system_is_down) {
+                pam_err = PAM_SUCCESS;
+        }
+
 	return (pam_err);
 }
 
