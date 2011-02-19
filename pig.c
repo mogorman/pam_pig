@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "pig.h"
 
@@ -40,7 +41,9 @@ uint32_t fnv_hasher(uint8_t *str)
 int please_verify_key(uint32_t epoch, unsigned char *secret, const char *hash)
 {
         char final_fnv[7];
+	int i =0;
         uint8_t digest[SHA256_DIGEST_SIZE];
+	char clean_hash[7] = {0};
         uint8_t time_in_4_bytes[4] = {0};
         uint32_t fnv_hash,fnv_hash2;
         memset(digest, 0, sizeof(digest));
@@ -52,8 +55,15 @@ int please_verify_key(uint32_t epoch, unsigned char *secret, const char *hash)
         fnv_hash = fnv_hasher(digest);
         fnv_hash2 = (fnv_hash>>24) ^ (fnv_hash & MASK_24);
         snprintf(final_fnv, 7, "%06x", fnv_hash2);
-        printf("hrrm %s, %s \n", final_fnv, hash);
-        if(strncmp(final_fnv,hash,6))
+	for(i = 0; i < strlen(hash); i++) {
+		clean_hash[i] = tolower(hash[i]);
+		if(clean_hash[i] == 'l') {
+			clean_hash[i] = '1';
+		}else if (clean_hash[i] == 'o') {
+			clean_hash[i] = '0';
+		}
+	}
+        if(strncmp(final_fnv,clean_hash,6))
                 return 1;
         return 0;
 }
