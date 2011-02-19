@@ -107,7 +107,7 @@ static int writePNG(QRcode *qrcode, const char *outfile)
 }
 
 int main() {
-        FILE * random_fd = fopen("/dev/urandom", "r");
+        FILE * random_fd = fopen("/dev/random", "r");
         FILE * secret_file = fopen("temp.key", "w");
         u_int8_t byte;
         char hex_buffer[3];
@@ -129,7 +129,6 @@ int main() {
                                 place =  i;
                         }
                 }
-		byte = 42;
                 finished_key[i] = byte;
                 snprintf(hex_buffer, 3 ,"%02X", byte);
                 print_buffer[j++] = hex_buffer[0];

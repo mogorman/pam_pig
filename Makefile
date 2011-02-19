@@ -5,6 +5,7 @@ pam_pig:
 	gcc -Werror -Wall   genkey.c  -lqrencode -lpng12 -o pig-genkey
 	gcc -Werror -Wall   transmitkey.c  -lqrencode -lpng12 -o pig-transmitkey
 	gcc -Werror -Wall   verifykey.c -o pig-verifykey -lnettle
+	gcc -Werror -Wall   crackkey.c -o pig-crackkey -lnettle
 	gcc -fPIC -lcurl -c pam_pig.c
 	gcc -lpam test-pam.c -o test-pam
 	ld -l curl -x --shared -o pam_pig.so pam_pig.o

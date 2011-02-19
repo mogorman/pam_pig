@@ -50,7 +50,7 @@ main(int argc, char **argv)
   uint8_t digest[SHA256_DIGEST_SIZE];
   uint8_t ihatebuffers[4] = {0};
   uint32_t fnv_hash,fnv_hash2;
-  uint32_t time = 1290769800;
+  uint32_t time = 1296579900;
   memset(digest, 0, sizeof(digest));
   //  char *test_string = "hello"; //"This is a test using a larger than block-size key and a larger than "
     //    "block-size data. The key needs to be hashed before being used by the HMAC algorithm.";
