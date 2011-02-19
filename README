@@ -33,3 +33,12 @@ auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth
 * Sign results
 * Logging
 * Verify permissions
+* add support for base 10, and base 32 number systems
+* convert to sha512 across board
+* shift keysize 128
+* rewrite avr code
+* qr code base 64
+* experation date
+* output options
+* hashing function phone apps
+* figure out bug in qr code image generation
