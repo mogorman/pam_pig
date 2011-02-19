@@ -299,6 +299,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	const char *system = getarg("system_is_down", argc, argv);
         const char *stacked = getarg("stacked_pass", argc, argv);
         const char *sandwich = getarg("sandwich", argc, argv);
+        const char *bottom = getarg("bottom", argc, argv);
         const char *skew_string = getarg("skew", argc, argv);
         const char *ldap_server = getarg("ldap_server", argc, argv);
 	const char *ldap_uri = getarg("ldap_uri", argc, argv);
@@ -319,8 +320,10 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	if( !password_prompt || password_prompt[0] == '\0') {
 		password_prompt="Oink!:";
 	}
-	if( sandwich && (!strcmp("yes",sandwich))) {
+        if( sandwich && (!strcmp("yes", sandwich))) {
 		im_a_sandwich = 1;
+        }
+	if( bottom && (!strcmp("yes", bottom))) {
                 eat_me = pam_getenv(pamh,"SANDWICH");
                 if(eat_me && !strcmp("tasty",eat_me)) {
                         log_message(LOG_ERR, pamh,"sandwich time");
@@ -430,7 +433,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,
         } else if (pam_err == PAM_SUCCESS && im_a_sandwich && strlen(tmp_password) == 6) {
                 log_message(LOG_ERR, pamh,"login won so making a tasty sandwich.");
                 pam_putenv(pamh, "SANDWICH=tasty");
-        } else {
+        } else if(im_a_sandwich){
                 pam_set_item(pamh, PAM_AUTHTOK, tmp_password);
                 pam_set_item(pamh, PAM_OLDAUTHTOK, tmp_password);
                 pam_err = PAM_SUCCESS;
