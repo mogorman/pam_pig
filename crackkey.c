@@ -1,11 +1,13 @@
 /* this is a block of example code I used to test the system early on no longer in use */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <nettle/sha.h>
-#include <nettle/hmac.h>
+#include <unistd.h>
+#include <stdint.h>
 
+#include "hmac_sha2.h"
 #include <ctype.h>
 
 #define FNV_PRIME_32 16777619
@@ -32,7 +34,6 @@ uint32_t fnv_hasher(uint8_t *str)
 
 int main(int argc, char **argv)
 {
-  struct hmac_sha256_ctx sha256;
   uint8_t digest[SHA256_DIGEST_SIZE];
   uint8_t ihatebuffers[4] = {0};
   uint32_t fnv_hash,fnv_hash2;
@@ -68,9 +69,7 @@ uint8_t hmacKey[]={
           hmacKey[253] = k;
           hmacKey[254] = j;
           hmacKey[255] = i;
-          hmac_sha256_set_key(&sha256, 256,hmacKey);
-          hmac_sha256_update(&sha256, 4, ihatebuffers);
-          hmac_sha256_digest(&sha256, SHA256_DIGEST_SIZE, digest);
+	  hmac_sha256(hmacKey, 256, ihatebuffers,4, digest, SHA256_DIGEST_SIZE);
           fnv_hash = fnv_hasher(digest);
           fnv_hash2 = (fnv_hash>>24) ^ (fnv_hash & MASK_24);
           if(fnv_hash2 == crack)
