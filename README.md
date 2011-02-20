@@ -1,6 +1,6 @@
 PAM PIG
 ================================
-Blah blah
+Pam module to enable PIG strong authentication
 
 Debian
 ======
