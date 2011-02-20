@@ -12,18 +12,18 @@ Debian
 2. Installation
 ---------------
 
-Installing pam module
+**Installing pam module**
 
 	cp pam_pig.so /lib/security
 
-Create secrets directory
+**Create secrets directory**
 
 	mkdir -p /etc/pig/secrets
 	cp temp.key /etc/pig/secrets/<USER>
 
-Configure Pam
+**Configure Pam**
 
-**edit /etc/pam.d/common-auth adding this before pam_unix.so**
+edit /etc/pam.d/common-auth adding this before pam_unix.so
 
 	# url: URL to pig_pen server
 	# system_is_down: allow user to login even if pig_pen server is down
@@ -32,14 +32,14 @@ Configure Pam
 	auth required pam_unix.so nullok_secure try_first_pass
 	auth [success=1 default=ignore] pam_pig.so bottom=yes
 
-OR
+**OR**
 
 edit /etc/pam.d/common-auth  for password then oink
 
 	auth    required        pam_unix.so try_first_pass nullok_secure                                                      
 	auth    [success=1 default=ignore]     pam_pig.so 
 
-Configure SSHD
+**Configure SSHD**
 
 edit /etc/ssh/sshd_config and change ChallengeResponseAuthentication AND UsePAM to:
 
