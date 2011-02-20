@@ -39,6 +39,16 @@ edit /etc/pam.d/common-auth  for password then oink
 	auth    required        pam_unix.so try_first_pass nullok_secure                                                      
 	auth    [success=1 default=ignore]     pam_pig.so 
 
+Configure SSHD
+
+edit /etc/ssh/sshd_config and change ChallengeResponseAuthentication AND UsePAM to:
+
+	ChallengeResponseAuthentication yes
+	UsePAM yes
+
+
+	
+
 TODO
 ----
 * QR console output
