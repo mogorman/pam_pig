@@ -6,7 +6,7 @@ Debian
 ------
 
 1. Pre-requisites
-
+-----------------
 	apt-get install build-essential git-core libcurl4-gnutls-dev libqrencode-dev libpng12-dev
 
 2. Installation
