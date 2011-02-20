@@ -11,16 +11,20 @@ Debian
 
 2. Installation
 ---------------
+
+Blah
 	cp pam_pig.so /lib/security
 	cp pig_pen.init /etc/init.d
 	cp pig_pen /usr/local/bin
 	update-rc.d pig_pen.init defaults
+Blah
 
 	mkdir -p /etc/pig/secrets
 	cp temp.key /etc/pig/secrets/jimshoe
 
 	mkdir -p /etc/pig/ids
 	echo <USER> > /etc/pig/ids/<USER>
+Blah
 
 	edit /etc/pam.d/common-auth adding this before pam_unix.so
 
