@@ -2,7 +2,7 @@ PAM PIG
 ================================
 Blah blah
 
-## Debian
+Debian
 
 1. Pre-requisites
 -----------------
