@@ -12,34 +12,31 @@ Debian
 2. Installation
 ---------------
 
-Blah
+Installing pam module
+
 	cp pam_pig.so /lib/security
-	cp pig_pen.init /etc/init.d
-	cp pig_pen /usr/local/bin
-	update-rc.d pig_pen.init defaults
-Blah
+
+Create secrets directory
 
 	mkdir -p /etc/pig/secrets
-	cp temp.key /etc/pig/secrets/jimshoe
+	cp temp.key /etc/pig/secrets/<USER>
 
-	mkdir -p /etc/pig/ids
-	echo <USER> > /etc/pig/ids/<USER>
-Blah
+Configure Pam
 
-	edit /etc/pam.d/common-auth adding this before pam_unix.so
+edit /etc/pam.d/common-auth adding this before pam_unix.so
 
 	# url: URL to pig_pen server
 	# system_is_down: allow user to login even if pig_pen server is down
 	# stacked_pass: pig password appended to normal pass, and passed to next pam
-	auth       required                        pam_pig.so url=http://localhost:4240/auth/ system_is_down=allow stacked_pass=yes 
+	auth       required                        pam_pig.so  stacked_pass=yes 
 	auth       [success=1 default=ignore]      pam_unix.so try_first_pass nullok_secure
 
-	OR
+-OR-
 
-	edit /etc/pam.d/common-auth  for password then oink
+edit /etc/pam.d/common-auth  for password then oink
 
 	auth    required        pam_unix.so try_first_pass nullok_secure                                                      
-	auth    [success=1 default=ignore]     pam_pig.so url=http://localhost:4240/auth/ system_is_down=allow stacked_pass=no
+	auth    [success=1 default=ignore]     pam_pig.so 
 
 TODO
 ----
