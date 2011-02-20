@@ -23,7 +23,7 @@ Create secrets directory
 
 Configure Pam
 
-edit /etc/pam.d/common-auth adding this before pam_unix.so
+**edit /etc/pam.d/common-auth adding this before pam_unix.so**
 
 	# url: URL to pig_pen server
 	# system_is_down: allow user to login even if pig_pen server is down
