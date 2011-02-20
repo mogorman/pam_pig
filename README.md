@@ -28,10 +28,11 @@ edit /etc/pam.d/common-auth adding this before pam_unix.so
 	# url: URL to pig_pen server
 	# system_is_down: allow user to login even if pig_pen server is down
 	# stacked_pass: pig password appended to normal pass, and passed to next pam
-	auth       required                        pam_pig.so  stacked_pass=yes 
-	auth       [success=1 default=ignore]      pam_unix.so try_first_pass nullok_secure
+	auth required pam_pig.so sandwich=yes
+	auth required pam_unix.so nullok_secure try_first_pass
+	auth [success=1 default=ignore] pam_pig.so bottom=yes
 
--OR-
+#OR
 
 edit /etc/pam.d/common-auth  for password then oink
 
