@@ -32,7 +32,7 @@ edit /etc/pam.d/common-auth adding this before pam_unix.so
 	auth required pam_unix.so nullok_secure try_first_pass
 	auth [success=1 default=ignore] pam_pig.so bottom=yes
 
-#OR
+OR
 
 edit /etc/pam.d/common-auth  for password then oink
 
